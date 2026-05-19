@@ -1,6 +1,6 @@
 {
   "name": "@slotjs/umi-qiankun-discovery",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A Umi plugin for qiankun app discovery.",
   "author": "iamwjun <cddxwujun@hotmail.com>",
   "license": "MIT",
@@ -44,6 +44,9 @@
   },
   "peerDependencies": {
     "umi": "^4.0.0"
+  },
+  "dependencies": {
+    "qiankun": "^2.10.16"
   },
   "devDependencies": {
     "father": "^4.1.8",
