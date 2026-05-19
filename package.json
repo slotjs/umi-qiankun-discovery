@@ -1,0 +1,54 @@
+{
+  "name": "@slotjs/umi-qiankun-discovery",
+  "version": "0.0.1",
+  "description": "A Umi plugin for qiankun app discovery.",
+  "author": "iamwjun <cddxwujun@hotmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/slotjs/umi-qiankun-discovery#readme",
+  "bugs": {
+    "url": "https://github.com/slotjs/umi-qiankun-discovery/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/slotjs/umi-qiankun-discovery.git"
+  },
+  "main": "./dist/cjs/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/cjs/index.d.ts",
+      "require": "./dist/cjs/index.js",
+      "default": "./dist/cjs/index.js"
+    }
+  },
+  "sideEffects": false,
+  "scripts": {
+    "dev": "father dev",
+    "build": "father build",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": [
+    "slotjs",
+    "umi",
+    "umi-plugin",
+    "qiankun",
+    "micro-frontend",
+    "discovery"
+  ],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "umi": "^4.0.0"
+  },
+  "devDependencies": {
+    "father": "^4.1.8",
+    "umi": "^4.6.55",
+    "@types/node": "^18.15.11",
+    "typescript": "^5.0.3"
+  }
+}

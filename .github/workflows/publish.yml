@@ -1,0 +1,105 @@
+name: Publish to npm
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - package.json
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-npm-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Detect version change
+        id: version
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          package_name="$(node -p "require('./package.json').name")"
+          current_version="$(node -p "require('./package.json').version")"
+          previous_version=""
+
+          if [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            previous_version="$(
+              git show "${BEFORE_SHA}:package.json" 2>/dev/null | node -e "
+                let input = '';
+                process.stdin.on('data', (chunk) => (input += chunk));
+                process.stdin.on('end', () => {
+                  try {
+                    process.stdout.write(JSON.parse(input).version || '');
+                  } catch {
+                    process.stdout.write('');
+                  }
+                });
+              "
+            )"
+          fi
+
+          echo "package_name=$package_name" >> "$GITHUB_OUTPUT"
+          echo "current_version=$current_version" >> "$GITHUB_OUTPUT"
+          echo "previous_version=$previous_version" >> "$GITHUB_OUTPUT"
+
+          if [ "$current_version" != "$previous_version" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check whether version is already published
+        id: published
+        if: steps.version.outputs.changed == 'true'
+        run: |
+          if npm view "${{ steps.version.outputs.package_name }}@${{ steps.version.outputs.current_version }}" version >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install dependencies
+        if: steps.version.outputs.changed == 'true' && steps.published.outputs.exists != 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package
+        if: steps.version.outputs.changed == 'true' && steps.published.outputs.exists != 'true'
+        run: pnpm build
+
+      - name: Publish package
+        if: steps.version.outputs.changed == 'true' && steps.published.outputs.exists != 'true'
+        run: npm publish
+
+      - name: Summarize result
+        if: always()
+        run: |
+          echo "Package: ${{ steps.version.outputs.package_name }}"
+          echo "Previous version: ${{ steps.version.outputs.previous_version }}"
+          echo "Current version: ${{ steps.version.outputs.current_version }}"
+          echo "Version changed: ${{ steps.version.outputs.changed }}"
+          echo "Already on npm: ${{ steps.published.outputs.exists || 'false' }}"
